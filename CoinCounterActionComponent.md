@@ -1,159 +1,107 @@
-
-# CoinCounterActionComponent Documentation
-
-This document describes the `CoinCounterActionComponent` Flutter widget, its methods, and their roles within the component.
-
----
+# CoinCounterActionComponent
 
 ## Overview
-`CoinCounterActionComponent` is a `StatefulWidget` that allows users to increment a coin counter visually and interact with backend APIs while providing feedback via animations and vibrations.
 
-It animates a counter, shows visual coin flying effects, and handles tip actions with external service communication.
-
----
-
-## Methods Documentation
-
-### 1. `initState()`
-Initializes the state variables:
-- Retrieves initial coin count and content ID.
-- Configures animation controllers for tooltip, press scaling, sliding and fading.
-
-**Example:**
-```dart
-@override
-void initState() {
-  super.initState();
-  _coinCount = (widget.content['settings']?['tip_owner'] ?? 0.0).toDouble();
-  _contentId = widget.content['id'];
-  // Initialize controllers
-}
-```
-
-### 2. `dispose()`
-Properly disposes of the animation controllers to prevent memory leaks.
-
-**Example:**
-```dart
-@override
-void dispose() {
-  _tooltipController.dispose();
-  _pressController.dispose();
-  super.dispose();
-}
-```
-
-### 3. `_incrementCoin()`
-Handles the logic for incrementing the coin count and shows the tooltip animation.
-
-**Example:**
-```dart
-await _incrementCoin();
-```
-
-### 4. `vibrateStrongAndShort()`
-Triggers a strong, short vibration (200ms, amplitude 255) if supported by the device.
-
-**Example:**
-```dart
-await vibrateStrongAndShort();
-```
-
-### 5. `_sendCoinRequest()`
-Sends a POST request to `/profile/coins` endpoint.
-Currently vibrates briefly to simulate request.
-
-**Example:**
-```dart
-await _sendCoinRequest();
-```
-
-### 6. `_onTapDown(TapDownDetails details)`
-Begins the press animation and triggers actions after completion.
-
-**Example:**
-```dart
-// GestureDetector(
-//   onTapDown: _onTapDown,
-// )
-```
-
-### 7. `_onTapUp(TapUpDetails details)`
-Resets the press animation when the tap is lifted.
-
-**Example:**
-```dart
-// GestureDetector(
-//   onTapUp: _onTapUp,
-// )
-```
-
-### 8. `_onTapCancel()`
-Resets the press animation if the tap gesture is cancelled.
-
-**Example:**
-```dart
-// GestureDetector(
-//   onTapCancel: _onTapCancel,
-// )
-```
-
-### 9. `build(BuildContext context)`
-Constructs the visual layout of the component with animated feedback.
-
-**Example:**
-```dart
-@override
-Widget build(BuildContext context) {
-  return Stack(
-    children: [
-      // UI structure
-    ],
-  );
-}
-```
+`CoinCounterActionComponent` is a `StatefulWidget` in Flutter responsible for handling a "tip" action where users can send a coin to a piece of content. It provides animated feedback including scaling effects, coin splash animation, and balance updates.
 
 ---
 
-## Visual Structure
-- Main counter and coin icon inside a `Row`.
-- Animated scale effect during press.
-- Animated flying coins as tooltip effects.
+## Props
+
+- **content** (`Map<String, dynamic>`) - Required: The content data, including `id` and settings like `tip_owner`.
+- **hasTipped** (`bool`) - Required: Indicates if the user has already tipped this content.
+- **onSuccess** (`void Function()?`) - Optional: Callback executed after a successful tip.
 
 ---
 
-## External Dependencies
-- `ContentProvider` for tipping API communication.
-- `DioClientService` for future external requests.
-- `vibration` package for device vibration control.
+## State Variables
+
+- `_coinCount` (`double`) - Current number of tips for the content.
+- `_contentId` (`int`) - Content ID.
+- `_showTooltip` (`bool`) - Controls visibility of splash animation.
+- `_hasTipped` (`bool`) - Tracks if the user has tipped (initial value based on widget's `hasTipped`).
+- `_isPressed` (`bool`) - Indicates if the button is being pressed.
+- `_isSending` (`bool`) - Prevents multiple requests when holding down.
+- `_pressStartTime` (`DateTime`) - Time when button press started.
+- `_tooltipController` (`AnimationController`) - Manages tooltip (coin splash) animation.
+- `_pressController` (`AnimationController`) - Manages button press scaling effect.
 
 ---
 
-## Potential Improvements
-- Implement real POST request logic inside `_sendCoinRequest`.
-- Enhance vibration feedback with custom patterns.
-- Add error handling visuals if POST request fails.
+## Animations
+
+- **SlideTransition** - Coins move outward in three directions: left-up, straight-up, right-up.
+- **FadeTransition** - Coins fade out while flying.
+- **ScaleTransition** - Button scales up on press.
+
+---
+
+## Lifecycle
+
+- **initState**
+    - Initializes providers, controllers, animations.
+- **dispose**
+    - Disposes animation controllers.
+
+---
+
+## Key Methods
+
+- **updateBalance(double newBalance)**
+    - Updates the user's wallet balance in the provider and notifies listeners.
+
+- **_incrementCoin()**
+    - Increments coin count visually.
+    - Calls `postTipOwner` on `ContentProvider`.
+    - On success, updates entrance balance and triggers success callback.
+
+- **_sendCoinRequest()**
+    - Triggers device vibration on tip action.
+
+- **_onTapDown(TapDownDetails details)**
+    - Starts scale animation and calls `_incrementCoin` and `_sendCoinRequest` if holding down.
+
+- **_onTapUp(TapUpDetails details)** and **_onTapCancel()**
+    - Resets scale animation.
+
+- **_buildSplashCoins()**
+    - Generates multiple flying coin widgets using `SlideTransition` and `FadeTransition`.
+
+---
+
+## UI Structure
+
+- **GestureDetector** wraps the main interaction container.
+- **Container** holds the animated coin counter and a coin image.
+- **Stack** structure allows overlaying flying coins.
+
+---
+
+## Assets
+
+- **Coin Image**: `assets/images/theme/default-icon/coin.png`
+
+---
+
+## Dependencies
+
+- `provider` for accessing providers (`EntranceProvider`, `ContentProvider`).
+- `vibration` package to handle device vibration feedback.
 
 ---
 
 ## Notes
-- Assumes vibration permissions are handled.
-- Optimized for a responsive and dynamic user interaction experience.
+
+- Safe access to nested maps (e.g., `widget.content['settings']?['tip_owner']`).
+- Good control to avoid multiple submissions using `_isSending` flag.
+- Mounted check after animations.
+- Graceful fallback if vibration API fails.
 
 ---
 
-## Flowchart
+## Potential Improvements
 
-```mermaid
-flowchart TD
-    TapDown --> PressAnimation
-    PressAnimation --> IncrementCoin
-    IncrementCoin --> SendCoinRequest
-    SendCoinRequest --> VibrationSuccess
-    TapUp --> ResetPressAnimation
-    TapCancel --> ResetPressAnimation
-```
-
----
-
-*Generated by AI based on provided code.*
+- Abstract splash coins directions and properties for easier reuse.
+- Move hardcoded image paths and animation durations into constants.
+- Add visual feedback for failure cases (e.g., API request fails).
+- Allow vibration feedback to be optional based on user settings.
