@@ -20,6 +20,7 @@ app.*.symbols
 app.*.map.json
 
 # Folder settings
-research/
 diff.txt
 getDiff.sh
+/research/
+/unused_files/
