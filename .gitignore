@@ -22,5 +22,6 @@ app.*.map.json
 # Folder settings
 diff.txt
 getDiff.sh
+setCommit.sh
 /research/
 /unused_files/
